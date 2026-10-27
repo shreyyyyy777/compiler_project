@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Regex Matching Engine</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Regex Matching Engine</h1>
+    <p class="subtitle">Regex &rarr; NFA (Thompson's construction) &rarr; lazy DFA (on-demand subset construction) &rarr; MATCH / NO MATCH</p>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="match">Match</button>
+    <button class="tab-btn" data-tab="automaton">Automaton</button>
+    <button class="tab-btn" data-tab="tests">Test Suite</button>
+  </nav>
+
+  <main>
+    <section id="tab-match" class="tab-panel active">
+      <div class="card">
+        <label for="regex-input">Regular Expression</label>
+        <input id="regex-input" type="text" value="a*b" spellcheck="false" autocomplete="off" />
+
+        <label for="text-input">Input String</label>
+        <input id="text-input" type="text" value="aaab" spellcheck="false" autocomplete="off" />
+
+        <button id="check-btn">Check</button>
+
+        <div id="result-badge" class="badge hidden"></div>
+        <div id="error-banner" class="error-banner hidden"></div>
+
+        <div id="match-meta" class="meta hidden"></div>
+        <div id="trace" class="trace hidden"></div>
+      </div>
+    </section>
+
+    <section id="tab-automaton" class="tab-panel">
+      <div class="card">
+        <div class="automaton-controls">
+          <span>Showing automaton for the pattern above.</span>
+          <div class="seg-control">
+            <button class="seg-btn active" data-kind="dfa">DFA (lazy)</button>
+            <button class="seg-btn" data-kind="nfa">NFA (Thompson)</button>
+          </div>
+          <button id="refresh-automaton">Redraw</button>
+        </div>
+        <div id="automaton-note" class="note hidden"></div>
+        <div id="automaton-svg-wrap"><svg id="automaton-svg" width="100%" height="520"></svg></div>
+      </div>
+    </section>
+
+    <section id="tab-tests" class="tab-panel">
+      <div class="card">
+        <div class="test-suite-header">
+          <span id="test-summary">Loading test suite…</span>
+          <button id="run-tests-btn">Run Test Suite</button>
+        </div>
+        <table id="test-table">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Description</th>
+              <th>Pattern</th>
+              <th>Input</th>
+              <th>Expected</th>
+              <th>Actual</th>
+              <th>Result</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>NFA state explosion is avoided by never enumerating the DFA power set up front &mdash; states are built lazily, only for the subsets actually reached while matching.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
