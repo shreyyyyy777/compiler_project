@@ -18,11 +18,43 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from . import parser as ast
+from .errors import RegexLimitError
 
 # Sentinel transition key used for `.` (matches any single character).
 ANY = object()
+MAX_NFA_STATES = 50_000
 
 EPSILON = "epsilon"
+
+
+@dataclass(frozen=True)
+class CharSet:
+    chars: frozenset[str]
+    negated: bool = False
+
+
+def symbol_matches(symbol, char: str) -> bool:
+    if symbol is ANY:
+        return True
+    if isinstance(symbol, CharSet):
+        contains = char in symbol.chars
+        return not contains if symbol.negated else contains
+    return symbol == char
+
+
+def symbol_label(symbol) -> str:
+    if symbol is ANY:
+        return "any char"
+    if isinstance(symbol, CharSet):
+        prefix = "[^" if symbol.negated else "["
+        escaped = "".join(
+            "\\" + char if char in "\\]^-" else char
+            for char in sorted(symbol.chars)
+        )
+        if len(escaped) > 24:
+            escaped = escaped[:21] + "..."
+        return prefix + escaped + "]"
+    return symbol
 
 
 @dataclass
@@ -62,6 +94,10 @@ class _Builder:
         self.states: dict[int, NFAState] = {}
 
     def new_state(self) -> int:
+        if len(self.states) >= MAX_NFA_STATES:
+            raise RegexLimitError(
+                f"expanded NFA exceeds safety limit of {MAX_NFA_STATES} states"
+            )
         sid = len(self.states)
         self.states[sid] = NFAState(sid)
         return sid
@@ -76,6 +112,8 @@ class _Builder:
             return self._literal(node.char)
         if isinstance(node, ast.AnyChar):
             return self._any()
+        if isinstance(node, ast.CharClass):
+            return self._char_class(node)
         if isinstance(node, ast.Concat):
             return self._concat(node.parts)
         if isinstance(node, ast.Union):
@@ -86,6 +124,8 @@ class _Builder:
             return self._plus(self.compile(node.inner))
         if isinstance(node, ast.Optional):
             return self._optional(self.compile(node.inner))
+        if isinstance(node, ast.Repeat):
+            return self._repeat(node)
         raise TypeError(f"unknown AST node type: {type(node).__name__}")
 
     def _empty(self) -> _Fragment:
@@ -101,6 +141,11 @@ class _Builder:
     def _any(self) -> _Fragment:
         s, a = self.new_state(), self.new_state()
         self.states[s].add(ANY, a)
+        return _Fragment(s, a)
+
+    def _char_class(self, node: ast.CharClass) -> _Fragment:
+        s, a = self.new_state(), self.new_state()
+        self.states[s].add(CharSet(node.chars, node.negated), a)
         return _Fragment(s, a)
 
     def _concat(self, parts: list[ast.Node]) -> _Fragment:
@@ -141,6 +186,23 @@ class _Builder:
         self.eps(s, a)
         self.eps(inner.accept, a)
         return _Fragment(s, a)
+
+    def _repeat(self, node: ast.Repeat) -> _Fragment:
+        fragments = [self.compile(node.inner) for _ in range(node.minimum)]
+        if node.maximum is None:
+            fragments.append(self._star(self.compile(node.inner)))
+        else:
+            fragments.extend(
+                self._optional(self.compile(node.inner))
+                for _ in range(node.maximum - node.minimum)
+            )
+        if not fragments:
+            return self._empty()
+        result = fragments[0]
+        for fragment in fragments[1:]:
+            self.eps(result.accept, fragment.start)
+            result = _Fragment(result.start, fragment.accept)
+        return result
 
 
 def build_nfa(node: ast.Node) -> NFA:

@@ -1,3 +1,19 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class SyntaxDiagnostic:
+    message: str
+    code: str
+    position: int | None
+    end_position: int | None
+    hint: str | None
+    context: str | None
+    pointer: str | None
+
+
 class RegexSyntaxError(Exception):
     """Raised for ambiguous or malformed regular expressions.
 
@@ -6,13 +22,47 @@ class RegexSyntaxError(Exception):
     surfacing a raw traceback.
     """
 
-    def __init__(self, message: str, position: int | None = None):
+    def __init__(
+        self,
+        message: str,
+        position: int | None = None,
+        *,
+        end_position: int | None = None,
+        code: str = "invalid_syntax",
+        hint: str | None = None,
+    ):
         self.message = message
         self.position = position
+        self.end_position = end_position if end_position is not None else position
+        self.code = code
+        self.hint = hint
         if position is not None:
             super().__init__(f"{message} (at position {position})")
         else:
             super().__init__(message)
+
+    def diagnostic(self, pattern: str, *, radius: int = 28) -> SyntaxDiagnostic:
+        if self.position is None:
+            return SyntaxDiagnostic(
+                self.message, self.code, None, None, self.hint, None, None
+            )
+
+        start = max(0, self.position - radius)
+        stop_at = max(self.position + 1, (self.end_position or self.position) + 1)
+        stop = min(len(pattern), stop_at + radius)
+        context = pattern[start:stop]
+        pointer_start = self.position - start
+        pointer_end = max(pointer_start + 1, (self.end_position or self.position) - start + 1)
+        pointer = " " * pointer_start + "^" * max(1, pointer_end - pointer_start)
+        return SyntaxDiagnostic(
+            self.message,
+            self.code,
+            self.position,
+            self.end_position,
+            self.hint,
+            context,
+            pointer,
+        )
 
 
 class RegexLimitError(Exception):
