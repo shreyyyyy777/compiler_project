@@ -138,6 +138,8 @@ class _Parser:
                 "empty expression - expected a pattern here (empty alternation "
                 "branch, empty group, or trailing '|')",
                 self.pos,
+                code="empty_expression",
+                hint="Provide an expression on both sides of '|' and inside groups.",
             )
         if len(parts) == 1:
             return parts[0]
@@ -223,10 +225,14 @@ class _Parser:
         return Repeat(node, minimum, maximum)
 
     def parse_integer(self) -> int:
-        start = self.pos
+        value = 0
         while self.peek() and self.peek().isdigit():
-            self.advance()
-        return int(self.pattern[start:self.pos])
+            value = value * 10 + int(self.advance())
+            if value > MAX_REPEAT_COUNT:
+                raise RegexLimitError(
+                    f"numeric quantifier exceeds repeat limit {MAX_REPEAT_COUNT}"
+                )
+        return value
 
     def parse_atom(self) -> Node:
         c = self.peek()
@@ -238,6 +244,7 @@ class _Parser:
             )
 
         if c == "(":
+            opening_pos = self.pos
             self.depth += 1
             if self.depth > MAX_GROUP_NESTING:
                 raise RegexLimitError(
@@ -248,7 +255,7 @@ class _Parser:
             if self.peek() != ")":
                 raise RegexSyntaxError(
                     "unmatched '(' - missing closing ')'",
-                    self.pos,
+                    opening_pos,
                     code="unmatched_open_group",
                     hint="Add a closing ')' for this group.",
                 )
@@ -371,6 +378,13 @@ class _Parser:
     def parse_class_character(self) -> tuple[str, int]:
         position = self.pos
         char = self.advance()
+        if char == "-":
+            raise RegexSyntaxError(
+                "literal '-' inside a character class must be escaped",
+                position,
+                code="unescaped_class_hyphen",
+                hint="Write '\\-' for a literal hyphen.",
+            )
         if char != "\\":
             return char, position
         if self.peek() is None:

@@ -14,7 +14,9 @@
 
   <nav class="tabs">
     <button class="tab-btn active" data-tab="match">Match</button>
+    <button class="tab-btn" data-tab="simulation">Simulation</button>
     <button class="tab-btn" data-tab="automaton">Automaton</button>
+    <button class="tab-btn" data-tab="performance">Performance</button>
     <button class="tab-btn" data-tab="tests">Test Suite</button>
   </nav>
 
@@ -37,18 +39,52 @@
       </div>
     </section>
 
+    <section id="tab-simulation" class="tab-panel">
+      <div class="card">
+        <div class="automaton-controls">
+          <span>Consume the Match-tab input one character at a time.</span>
+          <div id="simulation-kind" class="seg-control">
+            <button class="sim-kind-btn active" data-kind="dfa">DFA</button>
+            <button class="sim-kind-btn" data-kind="nfa">NFA</button>
+          </div>
+          <button id="run-simulation">Run Simulation</button>
+        </div>
+        <div id="simulation-note" class="note hidden"></div>
+        <div id="simulation-summary" class="meta hidden"></div>
+        <div class="table-wrap">
+          <table id="simulation-table">
+            <thead><tr><th>Step</th><th>Input</th><th>From</th><th>Active state(s)</th><th>Accept?</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
     <section id="tab-automaton" class="tab-panel">
       <div class="card">
         <div class="automaton-controls">
           <span>Showing automaton for the pattern above.</span>
-          <div class="seg-control">
+          <div id="automaton-kind" class="seg-control">
             <button class="seg-btn active" data-kind="dfa">DFA (lazy)</button>
+            <button class="seg-btn" data-kind="min_dfa">DFA (minimized)</button>
             <button class="seg-btn" data-kind="nfa">NFA (Thompson)</button>
           </div>
           <button id="refresh-automaton">Redraw</button>
         </div>
         <div id="automaton-note" class="note hidden"></div>
+        <div id="automaton-legend" class="automaton-legend hidden"></div>
         <div id="automaton-svg-wrap"><svg id="automaton-svg" width="100%" height="520"></svg></div>
+      </div>
+    </section>
+
+    <section id="tab-performance" class="tab-panel">
+      <div class="card">
+        <p class="section-copy">Runs a fixed five-warmup procedure with a bounded number of measured repetitions. Results include the workload checksum, environment, automaton sizes, minimization counts, and nanosecond timing summary.</p>
+        <label for="performance-repeats">Measured repetitions (1–100)</label>
+        <input id="performance-repeats" type="number" min="1" max="100" value="25" />
+        <button id="run-performance">Analyze Current Input</button>
+        <div id="performance-note" class="note hidden"></div>
+        <pre id="performance-output" class="performance-output hidden"></pre>
       </div>
     </section>
 
@@ -58,26 +94,28 @@
           <span id="test-summary">Loading test suite…</span>
           <button id="run-tests-btn">Run Test Suite</button>
         </div>
-        <table id="test-table">
-          <thead>
-            <tr>
-              <th>Category</th>
-              <th>Description</th>
-              <th>Pattern</th>
-              <th>Input</th>
-              <th>Expected</th>
-              <th>Actual</th>
-              <th>Result</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+        <div class="table-wrap">
+          <table id="test-table">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Description</th>
+                <th>Pattern</th>
+                <th>Input</th>
+                <th>Expected</th>
+                <th>Actual</th>
+                <th>Result</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
     </section>
   </main>
 
   <footer>
-    <p>NFA state explosion is avoided by never enumerating the DFA power set up front &mdash; states are built lazily, only for the subsets actually reached while matching.</p>
+    <p>Matching remains lazy and bounded; complete DFA construction is performed only for the explicitly requested minimization and analysis views.</p>
   </footer>
 
   <script src="app.js"></script>

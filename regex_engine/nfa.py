@@ -60,7 +60,7 @@ def symbol_label(symbol) -> str:
 @dataclass
 class NFAState:
     id: int
-    # symbol -> set of target state ids (symbol is a 1-char string, or ANY)
+    # symbol -> targets (symbol is a literal, CharSet, or ANY)
     transitions: dict = field(default_factory=dict)
     epsilon: set = field(default_factory=set)
 

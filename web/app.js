@@ -12,6 +12,7 @@ tabButtons.forEach((btn) => {
     btn.classList.add("active");
     $(`#tab-${btn.dataset.tab}`).classList.add("active");
     if (btn.dataset.tab === "automaton") drawAutomaton();
+    if (btn.dataset.tab === "simulation") runSimulation();
     if (btn.dataset.tab === "tests" && !testsLoadedOnce) runTests();
   });
 });
@@ -39,7 +40,11 @@ async function checkMatch() {
   if (data.error) {
     badge.classList.add("hidden");
     errorBanner.classList.remove("hidden");
-    errorBanner.textContent = `${data.error_type === "limit" ? "Limit exceeded" : "Invalid regex"}: ${data.error}`;
+    const detail = data.error_context && data.error_pointer
+      ? `\n${data.error_context}\n${data.error_pointer}`
+      : "";
+    const hint = data.error_hint ? `\nHint: ${data.error_hint}` : "";
+    errorBanner.textContent = `${data.error_type === "limit" ? "Limit exceeded" : "Invalid regex"}: ${data.error}${detail}${hint}`;
     meta.classList.add("hidden");
     trace.classList.add("hidden");
     return;
@@ -74,9 +79,9 @@ $("#check-btn").addEventListener("click", checkMatch);
 // ---------------------------------------------------------------------------
 
 let automatonKind = "dfa";
-document.querySelectorAll(".seg-btn").forEach((btn) => {
+document.querySelectorAll("#automaton-kind .seg-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
-    document.querySelectorAll(".seg-btn").forEach((b) => b.classList.remove("active"));
+    document.querySelectorAll("#automaton-kind .seg-btn").forEach((b) => b.classList.remove("active"));
     btn.classList.add("active");
     automatonKind = btn.dataset.kind;
     drawAutomaton();
@@ -94,6 +99,9 @@ async function drawAutomaton() {
   const data = await res.json();
 
   const note = $("#automaton-note");
+  const legend = $("#automaton-legend");
+  legend.innerHTML = "";
+  legend.classList.add("hidden");
   if (data.error) {
     note.classList.remove("hidden");
     note.textContent = `Cannot draw automaton: ${data.error}`;
@@ -104,10 +112,114 @@ async function drawAutomaton() {
     note.classList.remove("hidden");
     note.textContent = `Pattern produces a large automaton - showing the first states reached (render capped for readability). Matching itself is unaffected.`;
   } else {
-    note.classList.add("hidden");
+    if (data.states_after !== undefined) {
+      note.classList.remove("hidden");
+      const deadNote = data.dead_state_omitted ? " Dead-state-only transitions are omitted from the drawing for readability." : "";
+      note.textContent = `Minimized ${data.reachable_states_before} reachable complete-DFA states to ${data.states_after}.${deadNote}`;
+    } else {
+      note.classList.add("hidden");
+    }
+  }
+
+  if (data.classes) {
+    legend.classList.remove("hidden");
+    for (const item of data.classes) {
+      const entry = document.createElement("span");
+      entry.textContent = `${item.id} = ${item.label}`;
+      legend.appendChild(entry);
+    }
   }
 
   renderGraph(data.nodes, data.edges, data.start);
+}
+
+// ---------------------------------------------------------------------------
+// Step-by-step simulation
+// ---------------------------------------------------------------------------
+
+let simulationKind = "dfa";
+document.querySelectorAll(".sim-kind-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".sim-kind-btn").forEach((item) => item.classList.remove("active"));
+    btn.classList.add("active");
+    simulationKind = btn.dataset.kind;
+    runSimulation();
+  });
+});
+$("#run-simulation").addEventListener("click", runSimulation);
+
+async function runSimulation() {
+  const res = await fetch("/api/simulate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      regex: $("#regex-input").value,
+      input: $("#text-input").value,
+      kind: simulationKind,
+    }),
+  });
+  const data = await res.json();
+  const note = $("#simulation-note");
+  const summary = $("#simulation-summary");
+  const tbody = document.querySelector("#simulation-table tbody");
+  tbody.innerHTML = "";
+  if (data.error) {
+    note.classList.remove("hidden");
+    note.textContent = `${data.error_type}: ${data.error}`;
+    summary.classList.add("hidden");
+    return;
+  }
+  note.classList.toggle("hidden", !data.steps_truncated);
+  if (data.steps_truncated) note.textContent = "Trace display capped at 500 steps; the full input was still evaluated.";
+  summary.classList.remove("hidden");
+  summary.textContent = `${data.kind.toUpperCase()} simulation: ${data.matches ? "MATCH" : "NO MATCH"}` +
+    (data.kind === "dfa" ? ` · ${data.dfa_states_explored} DFA states explored` : "");
+  for (const step of data.steps) {
+    const active = data.kind === "nfa"
+      ? step.active_states.map((id) => `q${id}`).join(", ")
+      : (step.dead ? "dead" : `q${step.dfa_state} = {${step.nfa_states.join(", ")}}`);
+    const from = data.kind === "nfa"
+      ? step.before_states.map((id) => `q${id}`).join(", ")
+      : (step.from_state === null ? "start" : `q${step.from_state}`);
+    const tr = document.createElement("tr");
+    for (const value of [step.index, step.char === null ? "ε-closure" : JSON.stringify(step.char), from, active, step.accept ? "yes" : "no"]) {
+      const td = document.createElement("td");
+      td.textContent = value;
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Reproducible performance analysis
+// ---------------------------------------------------------------------------
+
+$("#run-performance").addEventListener("click", runPerformance);
+
+async function runPerformance() {
+  const note = $("#performance-note");
+  const output = $("#performance-output");
+  note.classList.remove("hidden");
+  note.textContent = "Running bounded analysis…";
+  output.classList.add("hidden");
+  const res = await fetch("/api/analyze", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      regex: $("#regex-input").value,
+      input: $("#text-input").value,
+      repeats: Number($("#performance-repeats").value),
+    }),
+  });
+  const data = await res.json();
+  if (data.error) {
+    note.textContent = `${data.error_type}: ${data.error}`;
+    return;
+  }
+  note.classList.add("hidden");
+  output.classList.remove("hidden");
+  output.textContent = JSON.stringify(data, null, 2);
 }
 
 function renderGraph(nodes, edges, startId) {

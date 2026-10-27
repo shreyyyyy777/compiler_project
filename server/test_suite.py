@@ -19,6 +19,10 @@ CASES = [
     ("valid", "optional present", "colou?r", "color", True),
     ("valid", "optional absent", "colou?r", "colour", True),
     ("valid", "wildcard matches any char", "a.c", "abc", True),
+    ("v2-class", "character range", "[a-z]+", "compiler", True),
+    ("v2-class", "negated character class", "[^0-9]+", "regex", True),
+    ("v2-quantifier", "bounded repetition", "ab{2,4}c", "abbbc", True),
+    ("v2-quantifier", "unbounded numeric repetition", "(ab){2,}", "ababab", True),
     ("invalid", "a*b does not match trailing extra char", "a*b", "aaba", False),
     ("invalid", "alternation rejects unlisted char", "a|b", "c", False),
     ("invalid", "wildcard still needs a char", ".", "", False),
@@ -33,6 +37,8 @@ CASES = [
     ("malformed-regex", "empty alternation branch", "a|", "a", None),
     ("malformed-regex", "trailing backslash", "a\\", "a", None),
     ("malformed-regex", "unknown escape", "\\q", "q", None),
+    ("malformed-regex", "descending character range", "[z-a]", "z", None),
+    ("malformed-regex", "reversed numeric bounds", "a{4,2}", "aaa", None),
 ]
 
 

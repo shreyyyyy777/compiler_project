@@ -42,19 +42,17 @@ this codebase — the "why", not the "what". For status/setup/file map see
   one directly (see `tests/test_dfa.py`) instead of going through
   `compile_pattern`.
 
-- **Safety limits are conservative defaults, not measured tuning.**
-  `MAX_PATTERN_LENGTH` (20,000), `MAX_GROUP_NESTING` (200),
-  `MAX_INPUT_LENGTH` (2,000,000), `MAX_DFA_STATES` (20,000). Chosen to
-  be generous for a course-project demo while still bounding worst-case
-  memory/CPU. If you raise them, re-run `tests/test_limits.py` — a few
-  tests there temporarily shrink `MAX_DFA_STATES` via monkeypatching
-  (`dfa_mod.MAX_DFA_STATES = ...`) to keep the explosion test fast; they
-  restore it in a `finally` block.
+- **Safety limits are conservative defaults, not measured tuning.** V2 adds
+  budgets for class expansion, numeric repeats, total NFA size, complete-DFA
+  construction, symbolic alphabet width, simulation output, and analysis
+  repetitions while retaining the V1 pattern/input/nesting/lazy-DFA limits.
+  The complete table and semantics are in `docs/V2_SEMANTICS.md`. If you
+  raise a limit, rerun `tests/test_limits.py` and the V2 test modules.
 
-- **No character classes / anchors / backreferences.** Out of scope by
-  the original project brief (basic operator set only: literals, `.`,
-  `|`, `*`, `+`, `?`, grouping, escapes). See HANDOFF.md for where to
-  add them if scope grows.
+- **The lazy DFA remains the matching default.** Character classes and
+  numeric quantifiers compile to the NFA. Complete DFA construction is used
+  only when minimization or performance analysis is explicitly requested,
+  so V2 does not silently replace the original state-explosion defense.
 
 - **Plain HTML/JS dashboard, no build step** (`web/`). Chosen so the
   whole project runs with just a Python venv — no npm/node dependency.

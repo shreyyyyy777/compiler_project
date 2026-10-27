@@ -51,6 +51,15 @@ def test_invalid_regex_reports_syntax_error_not_exception():
     assert result.error is not None
 
 
+def test_invalid_regex_reports_structured_diagnostic():
+    result = match("[z-a]", "z")
+    assert result.error_code == "descending_character_range"
+    assert result.error_position == 1
+    assert result.error_end_position == 3
+    assert result.error_context == "[z-a]"
+    assert result.error_pointer == " ^^^"
+
+
 def test_unrecognized_character_in_input_is_clean_no_match():
     result = match("a*b", "aa#b")
     assert result.matches is False

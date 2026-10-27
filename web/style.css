@@ -72,12 +72,22 @@ input[type="text"] {
   font-size: 0.95rem;
 }
 
+input[type="number"] {
+  width: 140px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--panel-border);
+  background: #0d1220;
+  color: var(--text);
+  font-family: var(--mono);
+}
+
 button {
   cursor: pointer;
   font-size: 0.9rem;
 }
 
-#check-btn, #run-tests-btn, #refresh-automaton {
+#check-btn, #run-tests-btn, #refresh-automaton, #run-simulation, #run-performance {
   margin-top: 16px;
   padding: 10px 20px;
   border-radius: 8px;
@@ -146,6 +156,8 @@ button {
 .seg-control { display: inline-flex; border: 1px solid var(--panel-border); border-radius: 8px; overflow: hidden; }
 .seg-btn { background: #0d1220; color: var(--muted); border: none; padding: 6px 12px; }
 .seg-btn.active { background: var(--accent); color: #fff; }
+.sim-kind-btn { background: #0d1220; color: var(--muted); border: none; padding: 6px 12px; }
+.sim-kind-btn.active { background: var(--accent); color: #fff; }
 
 .note {
   margin-top: 12px;
@@ -157,6 +169,20 @@ button {
 }
 
 #automaton-svg-wrap { margin-top: 16px; overflow-x: auto; border-radius: 10px; background: #0d1220; }
+.automaton-legend {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--muted);
+  font: 0.76rem var(--mono);
+}
+.automaton-legend span {
+  padding: 5px 8px;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  background: #0d1220;
+}
 
 .test-suite-header {
   display: flex;
@@ -173,6 +199,20 @@ td.pattern, td.input { font-family: var(--mono); }
 
 .pass { color: var(--good); font-weight: 700; }
 .fail { color: var(--bad); font-weight: 700; }
+
+.table-wrap { overflow-x: auto; }
+.section-copy { color: var(--muted); line-height: 1.5; }
+.performance-output {
+  margin-top: 16px;
+  max-height: 560px;
+  overflow: auto;
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid var(--panel-border);
+  background: #0d1220;
+  color: var(--text);
+  font: 0.78rem/1.5 var(--mono);
+}
 
 footer {
   text-align: center;

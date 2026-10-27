@@ -1,9 +1,9 @@
 # Regex Matching Engine
 
 A from-scratch regular-expression matcher built for a Compiler Design
-course project: **Regex → NFA (Thompson's construction) → DFA (lazy
-subset construction) → MATCH / NO MATCH**, plus a browser dashboard for
-live demos and testing evidence.
+course project: **Regex → NFA (Thompson's construction) → DFA → MATCH /
+NO MATCH**, plus a browser dashboard for matching, simulation,
+minimization, performance measurements, and testing evidence.
 
 > **Picking this project up from someone else?** Read
 > [HANDOFF.md](HANDOFF.md) first — current status, what's out of scope,
@@ -53,7 +53,7 @@ web/            static dashboard (no build step) served by the API
 ### Setup (one-time)
 
 ```bash
-cd /path/to/yohannshroff-useless-c-81944cc
+cd /Users/shrey/Documents/compiler/project
 python3 -m venv .venv
 ./.venv/bin/pip install -r requirements.txt
 ```
@@ -61,38 +61,53 @@ python3 -m venv .venv
 ### Run the tests
 
 ```bash
-cd /path/to/yohannshroff-useless-c-81944cc
-./.venv/bin/python -m pytest -q
+cd /Users/shrey/Documents/compiler/project
+PYTHONDONTWRITEBYTECODE=1 ./.venv/bin/python -m pytest -q -p no:cacheprovider
 ```
 
 ### Run the dashboard
 
 ```bash
-cd /path/to/yohannshroff-useless-c-81944cc
+cd /Users/shrey/Documents/compiler/project
 ./.venv/bin/python -m uvicorn server.main:app --reload --port 8008
 ```
 
-Then open http://127.0.0.1:8008 . Three tabs:
+Then open http://127.0.0.1:8008 . Five tabs:
 
 - **Match** - enter a regex and an input string, see MATCH/NO MATCH and
   the step-by-step DFA trace.
-- **Automaton** - visualizes the NFA (Thompson's construction) or the
-  lazy DFA for the current pattern.
+- **Simulation** - shows the active NFA set or DFA subset after each
+  consumed character.
+- **Automaton** - visualizes the NFA, lazy DFA, or complete minimized DFA.
+- **Performance** - runs the documented warmup/repetition procedure and
+  reports a workload checksum, automaton sizes, and timing distribution.
 - **Test Suite** - runs a predefined table of valid/invalid/boundary/
   malformed-regex cases and reports pass/fail (useful as review evidence).
 
+### Run the reproducible benchmark set
+
+```bash
+cd /Users/shrey/Documents/compiler/project
+./.venv/bin/python scripts/benchmark.py --repeats 25 --output benchmarks/v2_baseline.json
+```
+
 ## Supported syntax
 
-Literals, `.` (any char), concatenation, `|` (alternation), `*`, `+`,
-`?`, grouping `(...)`, and `\` to escape a metacharacter
-(`\* \+ \? \| \( \) \. \\ \[ \] \^ \$`). An empty pattern `""` is valid
-and matches only the empty string. Each atom may have at most one postfix
-operator; stacked operators such as `a**` are rejected as malformed.
+Literals, `.` (any char), concatenation, `|`, `*`, `+`, `?`, grouping,
+character classes (`[abc]`, `[a-z]`, `[^0-9]`), and numeric quantifiers
+(`{m}`, `{m,n}`, `{m,}`). Matching is always against the entire input.
+An empty pattern matches only empty input. Escape regex metacharacters
+with `\`; inside classes, escape `\`, `[`, `]`, `^`, and `-` when they
+are literal. Each atom accepts exactly one postfix quantifier, so `a**`
+and `a{2}+` are rejected.
 
-## Known limitations
+Exact semantics and every safety budget are documented in
+[docs/V2_SEMANTICS.md](docs/V2_SEMANTICS.md).
 
-- No character classes (`[abc]`), anchors (`^ $`), or backreferences -
-  out of scope for the "basic" engine described in the project brief.
+## Remaining limitations
+
+- No anchors, capture groups, backreferences, lookaround, shorthand
+  classes (`\d`, `\w`, `\s`), mode flags, or substring search.
 - `MAX_PATTERN_LENGTH` (20,000 chars), `MAX_GROUP_NESTING` (200 levels),
   `MAX_INPUT_LENGTH` (2,000,000 chars) and `MAX_DFA_STATES` (20,000
   cached states) are safety limits, not engine bugs - see

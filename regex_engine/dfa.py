@@ -19,7 +19,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from .errors import RegexLimitError
-from .nfa import NFA, ANY, CharSet, symbol_matches
+from .nfa import NFA, CharSet, symbol_matches
 
 MAX_DFA_STATES = 20_000
 
@@ -69,7 +69,13 @@ def transition_symbols(nfa: NFA) -> frozenset:
 
 
 def character_signature(symbols: frozenset, char: str) -> frozenset:
-    return frozenset(symbol for symbol in symbols if symbol_matches(symbol, char))
+    matched = {char} if char in symbols else set()
+    matched.update(
+        symbol
+        for symbol in symbols
+        if not isinstance(symbol, str) and symbol_matches(symbol, char)
+    )
+    return frozenset(matched)
 
 
 class LazyDFA:
@@ -133,6 +139,7 @@ class MinimizedDFAState:
     id: int
     original_state_ids: frozenset[int]
     is_accept: bool
+    is_dead: bool = False
     transitions: dict[int, int] = field(default_factory=dict)
 
 
@@ -240,6 +247,7 @@ def build_minimized_dfa(nfa: NFA) -> MinimizedDFA:
                 id=new_id,
                 original_state_ids=frozenset(group),
                 is_accept=representative in accepting,
+                is_dead=all(not keys[state_id] for state_id in group),
                 transitions={
                     item.id: minimized_id[transitions[representative][item.id]]
                     for item in classes

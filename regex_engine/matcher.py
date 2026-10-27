@@ -32,6 +32,12 @@ class MatchResult:
     matches: bool
     error: str | None = None
     error_type: str | None = None  # "syntax" | "limit" | None
+    error_code: str | None = None
+    error_position: int | None = None
+    error_end_position: int | None = None
+    error_hint: str | None = None
+    error_context: str | None = None
+    error_pointer: str | None = None
     dfa_states_explored: int = 0
     steps: list = field(default_factory=list)
     steps_truncated: bool = False
@@ -59,7 +65,18 @@ def match(pattern: str, text: str) -> MatchResult:
     try:
         compiled = compile_pattern(pattern)
     except RegexSyntaxError as e:
-        return MatchResult(matches=False, error=e.message, error_type="syntax")
+        diagnostic = e.diagnostic(pattern)
+        return MatchResult(
+            matches=False,
+            error=e.message,
+            error_type="syntax",
+            error_code=diagnostic.code,
+            error_position=diagnostic.position,
+            error_end_position=diagnostic.end_position,
+            error_hint=diagnostic.hint,
+            error_context=diagnostic.context,
+            error_pointer=diagnostic.pointer,
+        )
     except RegexLimitError as e:
         return MatchResult(matches=False, error=e.message, error_type="limit")
 
