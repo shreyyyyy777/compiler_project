@@ -117,17 +117,26 @@ def _build_dfa_graph(node) -> dict:
                 continue
             if nxt is None:
                 continue
-            edge_labels.setdefault((state.id, nxt.id), []).append(item.label)
+            edge_labels.setdefault((state.id, nxt.id), []).append(f"C{item.id}")
             if nxt.id not in visited:
                 visited.add(nxt.id)
                 queue.append(nxt)
 
     edges = []
     for (f, t), labels in edge_labels.items():
-        text = ",".join(labels) if len(labels) <= 8 else f"{len(labels)} symbols"
+        text = ",".join(labels) if len(labels) <= 8 else f"{len(labels)} input classes"
         edges.append({"from": f, "to": t, "label": text})
 
-    return {"nodes": nodes, "edges": edges, "start": dfa.start.id, "truncated": truncated}
+    return {
+        "nodes": nodes,
+        "edges": edges,
+        "start": dfa.start.id,
+        "truncated": truncated,
+        "classes": [
+            {"id": f"C{item.id}", "label": item.label}
+            for item in classes
+        ],
+    }
 
 
 def _build_minimized_dfa_graph(node) -> dict:

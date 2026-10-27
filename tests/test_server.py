@@ -25,6 +25,22 @@ def test_minimized_dfa_endpoint_reports_reduction_metadata():
     assert result["states_drawn"] == 1
     assert result["classes"]
     assert all(item["id"].startswith("C") for item in result["classes"])
+
+
+def test_lazy_dfa_uses_compact_edge_labels_with_a_legend():
+    result = api_automaton(
+        AutomatonRequest(regex="[A-Za-z]{2,4}[0-9]{2}", kind="dfa")
+    )
+    assert result["classes"] == [
+        {"id": "C0", "label": "0,1,2,3,4,5,6,7, … (10 chars)"},
+        {"id": "C1", "label": "A,B,C,D,E,F,G,H, … (52 chars)"},
+        {"id": "C2", "label": "any other char"},
+    ]
+    assert result["edges"]
+    assert all(
+        all(label.startswith("C") for label in edge["label"].split(","))
+        for edge in result["edges"]
+    )
     assert result["nodes"]
 
 
