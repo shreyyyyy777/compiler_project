@@ -1,0 +1,131 @@
+{
+  "command": "./.venv/bin/python scripts/benchmark.py --repeats 25",
+  "workloads": [
+    {
+      "name": "suffix-language",
+      "procedure_version": 1,
+      "workload_sha256": "9568152bab20ce306033aaab9f1b9dbb616ee6a4dba6110e55331fb7fe261264",
+      "environment": {
+        "python": "3.14.5",
+        "implementation": "CPython",
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64"
+      },
+      "parameters": {
+        "pattern": "(a|b)*abb",
+        "pattern_length": 9,
+        "input_length": 4003,
+        "warmups": 5,
+        "repeats": 25,
+        "timer": "time.perf_counter_ns",
+        "matching_mode": "warm lazy-DFA cache, full-string match"
+      },
+      "result": {
+        "matches": true,
+        "compile_ns": 30791,
+        "ast_nodes": 8,
+        "nfa_states": 14,
+        "nfa_symbol_transitions": 5,
+        "nfa_epsilon_transitions": 11,
+        "lazy_dfa_states_explored": 4,
+        "matching": {
+          "minimum_ns": 1448959,
+          "median_ns": 1462584,
+          "p95_ns": 1521792,
+          "maximum_ns": 1544750
+        },
+        "minimization": {
+          "status": "complete",
+          "elapsed_ns": 96334,
+          "reachable_states_before": 6,
+          "states_after": 5,
+          "alphabet_classes": 3
+        }
+      }
+    },
+    {
+      "name": "class-and-range",
+      "procedure_version": 1,
+      "workload_sha256": "ccf0dbb502e9573cb4ff6a409c3394599978c48780bc632dd6e77605a888ce66",
+      "environment": {
+        "python": "3.14.5",
+        "implementation": "CPython",
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64"
+      },
+      "parameters": {
+        "pattern": "[A-Za-z0-9_]{4,32}",
+        "pattern_length": 18,
+        "input_length": 18,
+        "warmups": 5,
+        "repeats": 25,
+        "timer": "time.perf_counter_ns",
+        "matching_mode": "warm lazy-DFA cache, full-string match"
+      },
+      "result": {
+        "matches": true,
+        "compile_ns": 116584,
+        "ast_nodes": 2,
+        "nfa_states": 120,
+        "nfa_symbol_transitions": 32,
+        "nfa_epsilon_transitions": 115,
+        "lazy_dfa_states_explored": 19,
+        "matching": {
+          "minimum_ns": 8083,
+          "median_ns": 8250,
+          "p95_ns": 8375,
+          "maximum_ns": 8416
+        },
+        "minimization": {
+          "status": "complete",
+          "elapsed_ns": 992458,
+          "reachable_states_before": 34,
+          "states_after": 34,
+          "alphabet_classes": 2
+        }
+      }
+    },
+    {
+      "name": "negated-class",
+      "procedure_version": 1,
+      "workload_sha256": "ebbab88d7fbbeafc16ca3c262d0246036746a35295969d2be926f4f67b584b78",
+      "environment": {
+        "python": "3.14.5",
+        "implementation": "CPython",
+        "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+        "machine": "arm64"
+      },
+      "parameters": {
+        "pattern": "[^,]{1,1000}",
+        "pattern_length": 12,
+        "input_length": 1000,
+        "warmups": 5,
+        "repeats": 25,
+        "timer": "time.perf_counter_ns",
+        "matching_mode": "warm lazy-DFA cache, full-string match"
+      },
+      "result": {
+        "matches": true,
+        "compile_ns": 3487541,
+        "ast_nodes": 2,
+        "nfa_states": 3998,
+        "nfa_symbol_transitions": 1000,
+        "nfa_epsilon_transitions": 3996,
+        "lazy_dfa_states_explored": 1001,
+        "matching": {
+          "minimum_ns": 475584,
+          "median_ns": 513583,
+          "p95_ns": 523916,
+          "maximum_ns": 556875
+        },
+        "minimization": {
+          "status": "complete",
+          "elapsed_ns": 909054208,
+          "reachable_states_before": 1002,
+          "states_after": 1002,
+          "alphabet_classes": 2
+        }
+      }
+    }
+  ]
+}
